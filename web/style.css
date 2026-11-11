@@ -190,7 +190,7 @@ a {
   outline: none;
 }
 
-/* Stops the background (and any running fling) while a window is open */
+/* Briefly set by script.js to stop a running fling (e.g. on a background change) */
 .scroller.is-frozen {
   overflow-y: hidden;
 }
@@ -220,6 +220,25 @@ a {
 
 .topbar > * {
   pointer-events: auto;
+}
+
+/* Installed on iPhone, the background runs behind the status bar, whose clock
+   and icons are always white there. A soft shade keeps them readable on light
+   backgrounds. Only for the installed app on iPhone/iPad: -webkit-touch-callout
+   is supported by iOS Safari alone, and the shade has zero height anywhere
+   without a top inset. */
+@media (display-mode: standalone) {
+  @supports (-webkit-touch-callout: none) {
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      z-index: var(--z-topbar);
+      height: calc(env(safe-area-inset-top) * 1.6);
+      background: linear-gradient(rgb(0 0 0 / 0.28), rgb(0 0 0 / 0));
+      pointer-events: none;
+    }
+  }
 }
 
 

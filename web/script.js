@@ -1149,10 +1149,29 @@ function paintPreviews() {
   }
 }
 
+/** Stops a running fling, e.g. when switching to another background. A tiny
+    instant scroll interrupts it in most browsers (a scroll to the current spot
+    is ignored, hence the 1px, unnoticeable while the background is redrawn);
+    briefly turning scrolling off also stops it on iPhone. */
+function stopScroll() {
+  scroller.classList.add("is-frozen");
+  scroller.scrollTo({ top: scroller.scrollTop + 1, behavior: "instant" });
+  requestAnimationFrame(() => requestAnimationFrame(() => scroller.classList.remove("is-frozen")));
+}
+
+// When the list of backgrounds was just flicked, a tap only stops it: not a choice.
+let pickerScrolledAt = -Infinity;
+document.querySelector("#backgrounds-panel .panel__content")
+  .addEventListener("scroll", () => { pickerScrolledAt = performance.now(); }, { passive: true });
+
 for (const button of backgroundButtons) {
-  button.addEventListener("click", () => {
-    setBackground(button.dataset.background);
-    saveBackground(backgroundName);
+  onTap(button, () => {
+    if (performance.now() - pickerScrolledAt < 150) return;
+    if (button.dataset.background !== backgroundName) {
+      stopScroll();
+      setBackground(button.dataset.background);
+      saveBackground(backgroundName);
+    }
     closePanel();
   });
 }
@@ -1192,9 +1211,8 @@ function openPanel(toggle) {
   panel.classList.add("is-open");
   backdrop.classList.add("is-open");
   toggle.setAttribute("aria-expanded", "true");
-  scroller.classList.add("is-frozen"); // stops the background while the window is open
   openToggle = toggle;
-  panel.focus();
+  panel.focus({ preventScroll: true });
 }
 
 function closePanel({ restoreFocus = true } = {}) {
@@ -1203,7 +1221,6 @@ function closePanel({ restoreFocus = true } = {}) {
   panel.classList.remove("is-open");
   backdrop.classList.remove("is-open");
   openToggle.setAttribute("aria-expanded", "false");
-  scroller.classList.remove("is-frozen");
   if (restoreFocus) openToggle.focus();
   openToggle = null;
 }
@@ -1216,10 +1233,10 @@ for (const toggle of document.querySelectorAll("[data-toggle]")) {
 }
 
 for (const button of document.querySelectorAll("[data-close]")) {
-  button.addEventListener("click", () => closePanel());
+  onTap(button, () => closePanel());
 }
 
-backdrop.addEventListener("click", () => closePanel());
+onTap(backdrop, () => closePanel());
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closePanel();
