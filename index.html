@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  <title>Slide: a calming scroll, open it instead of social media</title>
+  <meta name="description" content="Slide is a calming scroll through soothing backgrounds. Open it instead of social media: your thumb gets its scroll, your mind gets a break.">
+  <link rel="canonical" href="https://slide.gruvw.com/">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="gruvw">
+
+  <!-- Icons -->
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#172a4d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Slide">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <!-- Link previews (WhatsApp, Telegram, Signal, iMessage, Slack…) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Slide">
+  <meta property="og:title" content="Slide: a calming scroll">
+  <meta property="og:description" content="Open Slide instead of social media. Scroll through soothing backgrounds: no feed, no ads, nothing to catch up on.">
+  <meta property="og:url" content="https://slide.gruvw.com/">
+  <meta property="og:image" content="https://slide.gruvw.com/icons/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+  <meta property="og:image:alt" content="Slide logo: three soft waves on a deep navy square">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Slide: a calming scroll">
+  <meta name="twitter:description" content="Open Slide instead of social media. Scroll through soothing backgrounds: no feed, no ads, nothing to catch up on.">
+  <meta name="twitter:image" content="https://slide.gruvw.com/icons/og-image.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Slide",
+    "url": "https://slide.gruvw.com/",
+    "description": "A calming scroll through soothing backgrounds, to open instead of social media.",
+    "applicationCategory": "LifestyleApplication",
+    "operatingSystem": "Any",
+    "browserRequirements": "Requires a modern web browser",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Person", "name": "gruvw", "url": "https://github.com/gruvw" },
+    "codeRepository": "https://github.com/gruvw/slide"
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+
+    <!-- About: centered window on mobile, left side bar on desktop -->
+    <aside class="panel" id="about-panel" tabindex="-1" aria-labelledby="about-title">
+      <header class="panel__header">
+        <div>
+          <h1 class="panel__title panel__title--brand" id="about-title">Slide</h1>
+          <p class="panel__subtitle">A calming scroll.</p>
+        </div>
+        <button class="icon-button panel__close" type="button" data-close aria-label="Close">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="panel__content">
+        <div class="panel__body">
+          <p>Feel the pull to open a social app? Open Slide instead.</p>
+          <p>Scroll as long as you like through slow, soothing backgrounds. There is no feed, no notifications and nothing to catch up on. Your thumb gets its scroll, your mind gets a break.</p>
+          <p>Slide is free, open source and has no ads.</p>
+          <p>Tip: add Slide to your home screen, right where your usual app used to be.</p>
+        </div>
+        <footer class="panel__footer">
+          <a class="link-button" href="https://github.com/gruvw/slide" target="_blank" rel="noopener">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>
+            Source code on GitHub
+          </a>
+        </footer>
+      </div>
+    </aside>
+
+    <!-- The app: the scrolling zone and its two floating pills -->
+    <main class="app">
+      <div class="scroller" id="scroller" tabindex="0" aria-label="Endless calm scroll">
+        <div class="track" id="track"></div>
+      </div>
+
+      <nav class="topbar" aria-label="Slide">
+        <button class="pill" type="button" data-toggle="about-panel" aria-controls="about-panel" aria-expanded="false">Slide</button>
+        <button class="pill pill--icon" type="button" data-toggle="backgrounds-panel" aria-controls="backgrounds-panel" aria-expanded="false" aria-label="Choose a background">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
+        </button>
+      </nav>
+    </main>
+
+    <!-- Backgrounds: centered window on mobile, right side bar on desktop -->
+    <aside class="panel" id="backgrounds-panel" tabindex="-1" aria-labelledby="backgrounds-title">
+      <header class="panel__header">
+        <h2 class="panel__title" id="backgrounds-title">Backgrounds</h2>
+        <button class="icon-button panel__close" type="button" data-close aria-label="Close">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <div class="panel__content">
+        <ul class="bg-grid">
+          <li><button class="bg-option" type="button" data-background="leaves" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Leaves</span></button></li>
+          <li><button class="bg-option" type="button" data-background="hills" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Hills</span></button></li>
+          <li><button class="bg-option" type="button" data-background="night" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Night</span></button></li>
+          <li><button class="bg-option" type="button" data-background="dawn" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Dawn</span></button></li>
+          <li><button class="bg-option" type="button" data-background="sand" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Sand</span></button></li>
+          <li><button class="bg-option" type="button" data-background="tide" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Tide</span></button></li>
+          <li><button class="bg-option" type="button" data-background="petals" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Petals</span></button></li>
+          <li><button class="bg-option" type="button" data-background="glow" aria-pressed="false"><canvas class="bg-option__preview" aria-hidden="true"></canvas><span class="bg-option__name">Glow</span></button></li>
+        </ul>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+
+  <!-- Privacy-friendly visit counts (no cookies): https://slide.goatcounter.com -->
+  <script data-goatcounter="https://slide.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
