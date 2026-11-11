@@ -1167,12 +1167,32 @@ for (const button of backgroundButtons) {
 const backdrop = document.getElementById("backdrop");
 let openToggle = null;
 
+/** Runs fn when the element is tapped or clicked. Phones swallow the click of a
+    tap that stops a running scroll, so touch taps are handled as soon as the
+    finger lifts. That touch's own follow-up click is cancelled, otherwise it
+    could land on the window that just opened and close it again. */
+function onTap(element, fn) {
+  let start = null;
+  element.addEventListener("touchstart", (event) => {
+    const touch = event.changedTouches[0];
+    start = { x: touch.clientX, y: touch.clientY };
+  }, { passive: true });
+  element.addEventListener("touchend", (event) => {
+    const touch = event.changedTouches[0];
+    if (!start || Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > 10) return; // a swipe, not a tap
+    event.preventDefault();
+    fn();
+  });
+  element.addEventListener("click", fn); // mouse and keyboard
+}
+
 function openPanel(toggle) {
   closePanel({ restoreFocus: false });
   const panel = document.getElementById(toggle.getAttribute("aria-controls"));
   panel.classList.add("is-open");
   backdrop.classList.add("is-open");
   toggle.setAttribute("aria-expanded", "true");
+  scroller.classList.add("is-frozen"); // stops the background while the window is open
   openToggle = toggle;
   panel.focus();
 }
@@ -1183,12 +1203,13 @@ function closePanel({ restoreFocus = true } = {}) {
   panel.classList.remove("is-open");
   backdrop.classList.remove("is-open");
   openToggle.setAttribute("aria-expanded", "false");
+  scroller.classList.remove("is-frozen");
   if (restoreFocus) openToggle.focus();
   openToggle = null;
 }
 
 for (const toggle of document.querySelectorAll("[data-toggle]")) {
-  toggle.addEventListener("click", () => {
+  onTap(toggle, () => {
     if (openToggle === toggle) closePanel();
     else openPanel(toggle);
   });
