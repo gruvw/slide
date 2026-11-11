@@ -21,7 +21,7 @@
    ========================================================================== */
 
 const STORAGE_KEY = "slide:background";
-const DEFAULT_BACKGROUND = "leaves";
+const DEFAULT_BACKGROUND = "night";
 
 const CHUNK_HEIGHT = 1024;   // px of background per canvas
 const CHUNK_OVERLAP = 2;     // px each canvas overlaps its neighbours (hides seams)
