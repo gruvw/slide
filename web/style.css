@@ -27,6 +27,8 @@
   --color-surface-hover: rgb(27 39 66 / 0.06);
   --color-border: rgb(27 39 66 / 0.1);
   --color-accent: #1d3461;
+  --color-love: #d8374f;
+  --color-love-soft: rgb(216 55 79 / 0.08);
   --color-backdrop: rgb(14 22 40 / 0.35);
 
   /* Spacing scale */
@@ -84,6 +86,8 @@
     --color-surface-hover: rgb(255 255 255 / 0.07);
     --color-border: rgb(255 255 255 / 0.1);
     --color-accent: #8e9cba;
+    --color-love: #ff7b8b;
+    --color-love-soft: rgb(255 123 139 / 0.1);
     --color-backdrop: rgb(0 0 0 / 0.5);
   }
 }
@@ -346,7 +350,9 @@ button {
 
 .panel__footer {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
   margin-top: var(--space-5);
 }
 
@@ -386,6 +392,18 @@ button {
 
 .link-button:hover {
   background: var(--color-surface-hover);
+}
+
+.link-button--love {
+  border-color: var(--color-love);
+}
+
+.link-button--love .icon {
+  color: var(--color-love);
+}
+
+.link-button--love:hover {
+  background: var(--color-love-soft);
 }
 
 /* Background picker */
