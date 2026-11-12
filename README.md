@@ -15,7 +15,7 @@ catch up on. Your thumb gets its scroll, your mind gets a break.
 
 ## Features
 
-- Eight calm backgrounds: Leaves, Hills, Night, Dawn, Sand, Tide, Petals and Glow
+- Eight calm backgrounds: Night, Dawn, Petals, Glow, Leaves, Hills, Sand and Tide
 - Endless vertical scroll
 - Your background choice is remembered on the device (`localStorage`)
 - Installable as an app (PWA) and works offline
@@ -24,10 +24,9 @@ catch up on. Your thumb gets its scroll, your mind gets a break.
 
 ## Run locally
 
-It's a static site, no build step. Serve the `web/` directory with any static server:
+It's a static site, no build step. Serve the folder with any static server:
 
 ```sh
-cd web
 python3 -m http.server 8000
 # then open http://localhost:8000
 ```
