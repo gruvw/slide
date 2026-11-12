@@ -156,7 +156,8 @@ function traceBlob(ctx, x, y, r, shape) {
 
 const BACKGROUNDS = {
 
-  /* Dawn: a pastel sky with soft clouds, sometimes a sun or a few birds */
+  /* Dawn: a pastel sky with soft clouds, sometimes a sun or a few birds.
+     Rare: a hot-air balloon, a faint rainbow */
   dawn: {
     color: "#f7dccb",
     sky: ["#f7dccb", "#f4cdd3", "#e2d3ed", "#cadcf0", "#d4e9e2", "#f6e8cd"],
@@ -184,13 +185,25 @@ const BACKGROUNDS = {
         }));
         items.push({ type: "birds", x: between(random, 0.15, 0.85) * width, y: random() * height, birds });
       }
+      // rare
+      if (random() < 0.05) {
+        items.push({ type: "balloon", x: between(random, 0.15, 0.85) * width, y: between(random, 80, height - 80), size: between(random, 1.1, 1.6), colors: pick(random, BALLOON_COLORS) });
+      }
+      if (random() < 0.04) {
+        items.push({ type: "rainbow", x: between(random, 0.3, 0.7) * width, y: between(random, 200, height - 100), r: between(random, 180, 260) });
+      }
       return items;
     },
 
     paint(ctx, chunk) {
       paintSky(ctx, chunk, this.sky, 4);
       for (const item of chunk.items) {
-        if (item.type === "sun") {
+        if (item.type === "rainbow") paintRainbow(ctx, item); // behind the clouds
+      }
+      for (const item of chunk.items) {
+        if (item.type === "balloon") {
+          paintBalloon(ctx, item);
+        } else if (item.type === "sun") {
           softEllipse(ctx, item.x, item.y, item.r * 5, item.r * 5, "#fff2da", 0.55);
           const disc = ctx.createRadialGradient(item.x, item.y, 0, item.x, item.y, item.r);
           disc.addColorStop(0, "rgba(255,251,242,1)");
@@ -205,25 +218,15 @@ const BACKGROUNDS = {
             softEllipse(ctx, item.x + puff.dx, item.y + puff.dy, puff.r * 1.6, puff.r * 0.75, "#ffffff", item.alpha);
           }
         } else if (item.type === "birds") {
-          ctx.strokeStyle = rgba("#5d4e63", 0.4);
-          ctx.lineWidth = 1.3;
-          ctx.lineCap = "round";
-          for (const b of item.birds) {
-            const x = item.x + b.dx;
-            const y = item.y + b.dy;
-            ctx.beginPath();
-            ctx.moveTo(x - b.size, y - b.size * b.lift);
-            ctx.quadraticCurveTo(x - b.size * 0.4, y - b.size * 0.55, x, y);
-            ctx.quadraticCurveTo(x + b.size * 0.4, y - b.size * 0.55, x + b.size, y - b.size * b.lift);
-            ctx.stroke();
-          }
+          paintBirds(ctx, item, rgba("#5d4e63", 0.4));
         }
       }
     },
   },
 
   /* Tide: calm water seen from above: slow swells, ripple lines, sparkles,
-     rings where a drop just fell, and now and then a little paper boat */
+     rings where a drop just fell, and now and then a little paper boat.
+     Rare: koi swimming under the surface, lily pads with a lotus flower */
   tide: {
     color: "#d3e8ec",
     sky: ["#d6eaee", "#cce3e9", "#d1e6e8", "#d9ecec"],
@@ -241,6 +244,30 @@ const BACKGROUNDS = {
       const sparkles = 6 + Math.floor(random() * 7);
       for (let i = 0; i < sparkles; i++) {
         items.push({ type: "sparkle", x: random() * width, y: random() * height, r: between(random, 2.5, 5.5), alpha: between(random, 0.5, 0.95) });
+      }
+      // rare
+      if (random() < 0.05) {
+        const x = between(random, 0.2, 0.8) * width;
+        const y = between(random, 80, height - 80);
+        const angle = random() * TAU;
+        const fish = random() < 0.5 ? 1 : 2;
+        for (let i = 0; i < fish; i++) {
+          items.push({
+            type: "koi", x: x + i * between(random, 35, 55), y: y + i * between(random, 28, 45),
+            angle: angle + i * between(random, -0.4, 0.4), size: between(random, 21, 26), pattern: Math.floor(random() * 3),
+          });
+        }
+      }
+      if (random() < 0.06) {
+        const x = between(random, 0.15, 0.85) * width;
+        const y = between(random, 80, height - 80);
+        const pads = 2 + Math.floor(random() * 3);
+        for (let i = 0; i < pads; i++) {
+          items.push({
+            type: "pad", x: x + between(random, -45, 45), y: y + between(random, -30, 30), r: between(random, 13, 22),
+            notch: random() * TAU, color: pick(random, ["#8cbf8c", "#7db381", "#9ac795"]), flower: i === 0,
+          });
+        }
       }
       return items;
     },
@@ -266,6 +293,11 @@ const BACKGROUNDS = {
         ctx.lineTo(0, y + depth);
         ctx.closePath();
         ctx.fill();
+      }
+
+      // Koi swim under the surface, so the ripples pass over them
+      for (const item of chunk.items) {
+        if (item.type === "koi") paintKoi(ctx, item);
       }
 
       // Ripple lines
@@ -309,12 +341,15 @@ const BACKGROUNDS = {
           }
         } else if (item.type === "boat") {
           paintBoat(ctx, item);
+        } else if (item.type === "pad") {
+          paintLilyPad(ctx, item);
         }
       }
     },
   },
 
-  /* Sand: a zen garden, raked lines flowing around groups of stones */
+  /* Sand: a zen garden, raked lines flowing around groups of stones.
+     Rare: a raked spiral, a fallen maple leaf */
   sand: {
     color: "#ede4d2",
     sky: ["#efe6d4", "#eadfca", "#eee4cf", "#e8ddc8"],
@@ -332,7 +367,22 @@ const BACKGROUNDS = {
           }
         }
       }
-      return islands;
+      // rare
+      if (random() < 0.06) {
+        const reach = between(random, 40, 60);
+        const radius = reach + 7;
+        const spiral = {
+          spiral: true, reach, radius, stones: [], rings: 0, turn: random() * TAU,
+          x: width > 2 * radius ? between(random, radius, width - radius) : width / 2,
+          y: between(random, radius + 4, height - radius - 4),
+        };
+        if (islands.every((o) => Math.hypot(o.x - spiral.x, o.y - spiral.y) > o.radius + spiral.radius + 24)) islands.push(spiral);
+      }
+      const items = [...islands];
+      if (random() < 0.08) {
+        items.push({ type: "maple", x: random() * width, y: random() * height, size: between(random, 14, 18), angle: random() * TAU, color: pick(random, ["#c9553f", "#d8733f", "#c4423f"]) });
+      }
+      return items;
     },
 
     paint(ctx, chunk) {
@@ -342,7 +392,8 @@ const BACKGROUNDS = {
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, -CHUNK_OVERLAP, chunk.width, chunk.height + 2 * CHUNK_OVERLAP);
-      for (const island of chunk.items) {
+      const islands = chunk.items.filter((item) => item.type !== "maple");
+      for (const island of islands) {
         ctx.moveTo(island.x + island.radius, island.y);
         ctx.arc(island.x, island.y, island.radius, 0, TAU);
       }
@@ -354,17 +405,24 @@ const BACKGROUNDS = {
       });
       ctx.restore();
 
-      for (const island of chunk.items) {
+      for (const island of islands) {
+        if (island.spiral) {
+          rakeGroove(ctx, (offset) => traceSpiral(ctx, island.x, island.y, island.reach, island.turn, offset));
+        }
         for (let k = 0; k < island.rings; k++) {
           const r = island.core + 14 + k * 13;
           rakeGroove(ctx, (offset) => ctx.arc(island.x, island.y, r + offset, 0, TAU));
         }
         for (const stone of island.stones) paintStone(ctx, island.x + stone.dx, island.y + stone.dy, stone);
       }
+      for (const item of chunk.items) {
+        if (item.type === "maple") paintMaple(ctx, item);
+      }
     },
   },
 
-  /* Night: a deep sky with stars, faint nebulae and a rare shooting star */
+  /* Night: a deep sky with stars, faint nebulae and a rare shooting star.
+     Rare: a crescent moon, a constellation, a little ringed planet */
   night: {
     color: "#141a2c",
     sky: ["#141a2c", "#1b2441", "#221f3e", "#152739"],
@@ -390,6 +448,24 @@ const BACKGROUNDS = {
       }
       if (random() < 0.12) {
         items.push({ type: "meteor", x: random() * width, y: random() * height, length: between(random, 70, 140), angle: between(random, 0.15, 0.3) * Math.PI });
+      }
+      // rare
+      if (random() < 0.06) {
+        items.push({ type: "moon", x: between(random, 0.2, 0.8) * width, y: between(random, 60, height - 60), r: between(random, 16, 24), angle: between(random, -0.6, 0.6) });
+      }
+      if (random() < 0.08) {
+        const points = [{ x: between(random, 0.2, 0.8) * width, y: between(random, 80, height - 80) }];
+        let heading = random() * TAU;
+        for (let i = 0, n = 3 + Math.floor(random() * 3); i < n; i++) {
+          heading += between(random, -1.2, 1.2);
+          const step = between(random, 28, 55);
+          const last = points.at(-1);
+          points.push({ x: last.x + Math.cos(heading) * step, y: last.y + Math.sin(heading) * step });
+        }
+        items.push({ type: "constellation", y: points[0].y, points: points.map((p) => ({ dx: p.x - points[0].x, dy: p.y - points[0].y })), x: points[0].x });
+      }
+      if (random() < 0.03) {
+        items.push({ type: "planet", x: between(random, 0.15, 0.85) * width, y: between(random, 40, height - 40), r: between(random, 7, 11), tilt: between(random, -0.5, 0.5), color: pick(random, ["#d9c3a0", "#c7b8e6", "#e6b9a8"]) });
       }
       return items;
     },
@@ -428,6 +504,12 @@ const BACKGROUNDS = {
           ctx.moveTo(tailX, tailY);
           ctx.lineTo(item.x, item.y);
           ctx.stroke();
+        } else if (item.type === "moon") {
+          paintMoon(ctx, item);
+        } else if (item.type === "constellation") {
+          paintConstellation(ctx, item);
+        } else if (item.type === "planet") {
+          paintPlanet(ctx, item);
         }
       }
     },
@@ -435,7 +517,8 @@ const BACKGROUNDS = {
 
   /* Glow: soft, flat rounded shapes in the spirit of Material 3 Expressive
      (scalloped cookies, clovers, flowers, sunbursts, pills, circles), each one
-     a single solid shape with a gentle glow behind it, plus a few tiny dots */
+     a single solid shape with a gentle glow behind it, plus a few tiny dots.
+     Rare: a heart, a sparkle, a cookie with a little smiling face */
   glow: {
     color: "#fbf2ea",
     sky: ["#fbf2ea", "#f9edf1", "#f3effa", "#eef6f2", "#fbf2e6"],
@@ -471,6 +554,16 @@ const BACKGROUNDS = {
       for (let i = 0, n = 10 + Math.floor(random() * 8); i < n; i++) {
         items.push({ type: "dot", x: random() * width, y: random() * height, r: between(random, 2, 4), color: pick(random, this.tones) });
       }
+      // rare: take the place of a regular shape, so they never crowd the others
+      const shapes = items.filter((item) => item.type === "shape");
+      const swap = (changes) => {
+        if (!shapes.length) return;
+        const target = shapes.splice(Math.floor(random() * shapes.length), 1)[0];
+        Object.assign(target, changes, { r: Math.max(target.r, 26) });
+      };
+      if (random() < 0.06) swap({ type: "heart", color: pick(random, ["#f6a9bf", "#f4b2c5", "#ffb3a7"]), turn: between(random, -0.3, 0.3) });
+      if (random() < 0.06) swap({ type: "sparkle", color: pick(random, ["#fbd98a", "#ffd27a", "#cbbcfb"]), turn: between(random, -0.25, 0.25) });
+      if (random() < 0.04) swap({ type: "shape", face: true, kind: "round", lobes: 9, depth: 0.08, pinch: 1.5, turn: 0 });
       return items;
     },
 
@@ -489,7 +582,11 @@ const BACKGROUNDS = {
         softEllipse(ctx, item.x, item.y, item.r * 2, item.r * 2, item.color, 0.3);
         ctx.fillStyle = item.color;
         ctx.beginPath();
-        if (item.kind === "pill") {
+        if (item.type === "heart") {
+          traceHeart(ctx, item.x, item.y, item.r, item.turn);
+        } else if (item.type === "sparkle") {
+          traceSparkle(ctx, item.x, item.y, item.r, item.turn);
+        } else if (item.kind === "pill") {
           ctx.save();
           ctx.translate(item.x, item.y);
           ctx.rotate(item.turn);
@@ -499,12 +596,20 @@ const BACKGROUNDS = {
           traceRoundShape(ctx, item.x, item.y, item.r, item, item.turn);
         }
         ctx.fill();
+        if (item.type === "sparkle") {
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = item.r * 0.16;
+          ctx.lineJoin = "round";
+          ctx.stroke();
+        }
+        if (item.face) paintFace(ctx, item);
       }
     },
   },
 
   /* Petals: cherry blossom petals drifting by in loose clusters, now and then
-     a whole flower, and sometimes a blossoming branch reaching in from the side */
+     a whole flower, and sometimes a blossoming branch reaching in from the side.
+     Rare: a butterfly, a little bird perched on a branch */
   petals: {
     color: "#faf1ee",
     sky: ["#faf1ee", "#f8ebe8", "#f6eef0", "#f9efe9"],
@@ -535,6 +640,15 @@ const BACKGROUNDS = {
       if (random() < 0.5) {
         items.push({ type: "flower", x: random() * width, y: random() * height, size: between(random, 1.2, 1.7), angle: random() * TAU });
       }
+      // rare
+      if (random() < 0.07) {
+        items.push({ type: "butterfly", x: between(random, 0.15, 0.85) * width, y: between(random, 40, height - 40), size: between(random, 1.8, 2.3), angle: between(random, -0.6, 0.6), colors: pick(random, BUTTERFLY_COLORS) });
+      }
+      const branch = items[0]?.type === "branch" ? items[0] : null;
+      if (branch && random() < 0.2) {
+        const t = between(random, 0.4, 0.7);
+        branch.bird = { t, size: between(random, 1.6, 1.9), facing: random() < 0.5 ? -1 : 1 };
+      }
       return items;
     },
 
@@ -555,16 +669,34 @@ const BACKGROUNDS = {
           ctx.restore();
         } else if (item.type === "flower") {
           paintFlower(ctx, item.x, item.y, item.size, item.angle);
+        } else if (item.type === "butterfly") {
+          paintButterfly(ctx, item);
         }
       }
     },
   },
 
-  /* Hills: crisp layered ridges at dusk, with little pine trees on some of them */
+  /* Hills: crisp layered ridges at dusk, with little pine trees on some of them.
+     Rare: a cabin with a warm lit window, a hot-air balloon, a flock of birds */
   hills: {
     color: "#bfc6dc",
     bands: ["#c9d0e4", "#c6c2df", "#bfcde1", "#d0cbe0"], // slow drift of similar brightness
     shadow: "#26355c",
+
+    scatter(random, width, height) {
+      const items = [];
+      if (random() < 0.05) {
+        items.push({ type: "balloon", x: between(random, 0.15, 0.85) * width, y: between(random, 80, height - 80), size: between(random, 1.1, 1.5), colors: pick(random, BALLOON_COLORS) });
+      }
+      if (random() < 0.06) {
+        const birds = Array.from({ length: 4 + Math.floor(random() * 4) }, (_, i) => ({
+          dx: (i % 2 ? 1 : -1) * Math.ceil(i / 2) * between(random, 10, 14), dy: Math.ceil(i / 2) * between(random, 6, 9),
+          size: between(random, 3.5, 5), lift: between(random, 0.35, 0.6),
+        }));
+        items.push({ type: "flock", x: between(random, 0.2, 0.8) * width, y: between(random, 40, height - 60), birds });
+      }
+      return items;
+    },
 
     paint(ctx, chunk) {
       const spacing = 46;
@@ -606,11 +738,23 @@ const BACKGROUNDS = {
           }
           ctx.fill();
         }
+
+        // rare: a little cabin sitting on this ridge
+        if (random() < 0.004) {
+          const x = between(random, 0.15, 0.85) * chunk.width;
+          paintCabin(ctx, x, waveAt(x, y, waves) + 3, between(random, 1.5, 1.8));
+        }
+      }
+
+      for (const item of chunk.items) {
+        if (item.type === "balloon") paintBalloon(ctx, item);
+        else if (item.type === "flock") paintBirds(ctx, item, rgba("#34466f", 0.55));
       }
     },
   },
 
-  /* Leaves: flat, paper-cut leaves and ginkgo fans scattered on warm paper */
+  /* Leaves: flat, paper-cut leaves and ginkgo fans scattered on warm paper.
+     Rare: a ladybug, an acorn */
   leaves: {
     color: "#f5f0e6",
     sky: ["#f6f1e6", "#f2ece0", "#f4efe7", "#f1ebdd"],
@@ -643,6 +787,16 @@ const BACKGROUNDS = {
           }
         }
       }
+      // rare
+      const free = (x, y, r) => items.every((o) => Math.hypot(o.x - x, o.y - y) > o.size + r + 6);
+      if (random() < 0.07) {
+        const bug = { type: "ladybug", x: random() * width, y: random() * height, size: between(random, 1.8, 2.2), angle: random() * TAU };
+        if (free(bug.x, bug.y, 16)) items.push(bug);
+      }
+      if (random() < 0.06) {
+        const acorn = { type: "acorn", x: random() * width, y: random() * height, size: between(random, 1.6, 1.9), angle: random() * TAU };
+        if (free(acorn.x, acorn.y, 20)) items.push(acorn);
+      }
       return [...patches, ...seeds, ...items];
     },
 
@@ -665,6 +819,14 @@ const BACKGROUNDS = {
           ctx.beginPath();
           ctx.ellipse(item.x, item.y, item.r, item.r * 0.6, item.x % Math.PI, 0, TAU);
           ctx.fill();
+          continue;
+        }
+        if (item.type === "ladybug") {
+          paintLadybug(ctx, item);
+          continue;
+        }
+        if (item.type === "acorn") {
+          paintAcorn(ctx, item);
           continue;
         }
         ctx.save();
@@ -717,6 +879,531 @@ const BACKGROUNDS = {
 };
 
 /* Helpers used by the backgrounds above */
+
+/* ---- Rare items ---- */
+
+const BALLOON_COLORS = [
+  ["#f3a9a0", "#fbe3c4"], ["#a9c7ec", "#f5efe3"], ["#f6cf7e", "#f2a98f"], ["#b9a6e3", "#f6dce6"],
+];
+const BUTTERFLY_COLORS = [
+  ["#f2b8c9", "#f8dbe3"], ["#cdbff0", "#ebe4fb"], ["#f6d58f", "#fbecc4"], ["#a9d5e6", "#dcf0f6"],
+];
+
+/** Small V-shaped birds (dx/dy relative to item.x/item.y). */
+function paintBirds(ctx, item, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.3;
+  ctx.lineCap = "round";
+  for (const b of item.birds) {
+    const x = item.x + b.dx;
+    const y = item.y + b.dy;
+    ctx.beginPath();
+    ctx.moveTo(x - b.size, y - b.size * b.lift);
+    ctx.quadraticCurveTo(x - b.size * 0.4, y - b.size * 0.55, x, y);
+    ctx.quadraticCurveTo(x + b.size * 0.4, y - b.size * 0.55, x + b.size, y - b.size * b.lift);
+    ctx.stroke();
+  }
+}
+
+/** A hot-air balloon with two-tone gores and a little basket. */
+function paintBalloon(ctx, { x, y, size, colors: [main, stripe] }) {
+  const envelope = new Path2D("M0 14C-6 9 -17 1 -17 -9A17 17 0 0 1 17 -9C17 1 6 9 0 14Z");
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(size, size);
+  ctx.fillStyle = main;
+  ctx.fill(envelope);
+  ctx.save();
+  ctx.clip(envelope);
+  ctx.fillStyle = stripe;
+  for (const k of [-0.62, 0, 0.62]) {
+    ctx.beginPath();
+    ctx.ellipse(k * 17, -6, 3.2, 22, k * 0.25, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  ctx.beginPath();
+  ctx.ellipse(-7, -14, 5, 7, -0.5, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = "rgba(90,70,60,0.55)";
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  ctx.moveTo(-4, 11);
+  ctx.lineTo(-2.6, 18);
+  ctx.moveTo(4, 11);
+  ctx.lineTo(2.6, 18);
+  ctx.stroke();
+  ctx.fillStyle = "#9b7458";
+  ctx.beginPath();
+  ctx.roundRect(-3.2, 18, 6.4, 4.6, 1);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** A faint rainbow arc (y is the top of the arc). */
+function paintRainbow(ctx, { x, y, r }) {
+  const colors = ["#f4a6a6", "#f7c99b", "#f6e3a1", "#b9dfb0", "#a9cbea", "#c6b4e6"];
+  ctx.lineWidth = 7;
+  ctx.lineCap = "round";
+  colors.forEach((color, i) => {
+    ctx.strokeStyle = rgba(color, 0.3);
+    ctx.beginPath();
+    ctx.arc(x, y + r, r - i * 7, Math.PI + 0.45, TAU - 0.45);
+    ctx.stroke();
+  });
+}
+
+const KOI_BODY = new Path2D(
+  "M0 -1C0.42 -0.9 0.44 0.15 0.1 0.72L0.38 1.18Q0 1 -0.38 1.18L-0.1 0.72C-0.44 0.15 -0.42 -0.9 0 -1Z",
+);
+
+/** A koi seen from above, slightly faded as it swims below the surface. */
+function paintKoi(ctx, { x, y, angle, size, pattern }) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size, size);
+  ctx.globalAlpha = 0.88;
+  // side fins
+  ctx.fillStyle = "#f6efe6";
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(side * 0.33, -0.3, 0.26, 0.12, side * 0.6, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = "#fbf6ef";
+  ctx.fill(KOI_BODY);
+  ctx.save();
+  ctx.clip(KOI_BODY);
+  ctx.fillStyle = pattern === 2 ? "#e9a24c" : "#ef7d4b";
+  const spots = [
+    [[0, -0.7, 0.32], [0.05, 0.2, 0.24]],
+    [[-0.1, -0.35, 0.3], [0.12, 0.45, 0.2]],
+    [[0, -0.2, 0.55]],
+  ][pattern];
+  for (const [sx, sy, sr] of spots) {
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, TAU);
+    ctx.fill();
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
+/** A round lily pad with its notch; the first pad of a group carries a lotus. */
+function paintLilyPad(ctx, { x, y, r, notch, color, flower }) {
+  ctx.fillStyle = "rgba(60,110,120,0.15)";
+  ctx.beginPath();
+  ctx.ellipse(x + 2, y + 2.5, r, r * 0.92, 0, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.arc(x, y, r, notch + 0.28, notch - 0.28 + TAU);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.3)";
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  for (let k = 1; k < 6; k++) {
+    const a = notch + (k / 6) * TAU;
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.8);
+  }
+  ctx.stroke();
+  if (!flower) return;
+  ctx.save();
+  ctx.translate(x - r * 0.15, y - r * 0.1);
+  for (const [count, length, tone] of [[7, 9, "#f3b7c6"], [5, 6.5, "#f9d5df"]]) {
+    for (let k = 0; k < count; k++) {
+      ctx.save();
+      ctx.rotate((k / count) * TAU + length);
+      ctx.fillStyle = tone;
+      ctx.beginPath();
+      ctx.ellipse(0, -length * 0.55, length * 0.32, length * 0.6, 0, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.fillStyle = "#f2d27a";
+  ctx.beginPath();
+  ctx.arc(0, 0, 2.4, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** An Archimedean spiral raked around (x, y), out to `reach`. */
+function traceSpiral(ctx, x, y, reach, turn, offset) {
+  const spacing = 13 / TAU;
+  const end = (reach - 4) / spacing;
+  for (let a = 0; a <= end; a += 0.08) {
+    const radius = 4 + spacing * a + offset;
+    const px = x + Math.cos(a + turn) * radius;
+    const py = y + Math.sin(a + turn) * radius;
+    if (a === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+}
+
+/** A five-lobed maple leaf (unit size, pointing up), built from its tips and notches. */
+const MAPLE_SHAPE = (() => {
+  const points = [
+    [-145, 0.88], [-117, 0.36], [-90, 1], [-63, 0.36], [-35, 0.88], [-8, 0.34],
+    [22, 0.6], [90, 0.2], [158, 0.6], [188, 0.34],
+  ];
+  const path = new Path2D();
+  points.forEach(([deg, length], i) => {
+    const a = (deg * Math.PI) / 180;
+    path[i ? "lineTo" : "moveTo"](Math.cos(a) * length, Math.sin(a) * length);
+  });
+  path.closePath();
+  return path;
+})();
+
+function paintMaple(ctx, { x, y, size, angle, color }) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size, size);
+  ctx.lineJoin = "round";
+  ctx.lineWidth = 0.12;
+  ctx.save();
+  ctx.translate(0.14, 0.14);
+  ctx.fillStyle = ctx.strokeStyle = "rgba(110,85,50,0.18)";
+  ctx.fill(MAPLE_SHAPE);
+  ctx.stroke(MAPLE_SHAPE);
+  ctx.restore();
+  ctx.fillStyle = ctx.strokeStyle = color;
+  ctx.fill(MAPLE_SHAPE);
+  ctx.stroke(MAPLE_SHAPE);
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 0.06;
+  ctx.beginPath();
+  for (const deg of [-145, -90, -35, 22, 158]) {
+    const a = (deg * Math.PI) / 180;
+    ctx.moveTo(0, 0.05);
+    ctx.lineTo(Math.cos(a) * 0.7, Math.sin(a) * 0.7);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 0.09;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(0, 0.15);
+  ctx.quadraticCurveTo(0.05, 0.5, 0.15, 0.75);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A crescent moon with a soft glow. */
+function paintMoon(ctx, { x, y, r, angle }) {
+  softEllipse(ctx, x, y, r * 4.5, r * 4.5, "#fff1d6", 0.16);
+  softEllipse(ctx, x, y, r * 2, r * 2, "#fff1d6", 0.18);
+  const shadowX = x + Math.cos(angle) * r * 0.45;
+  const shadowY = y + Math.sin(angle) * r * 0.45 - r * 0.12;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x - r * 2, y - r * 2, r * 4, r * 4);
+  ctx.arc(shadowX, shadowY, r * 0.86, 0, TAU);
+  ctx.clip("evenodd");
+  ctx.fillStyle = "#fff3da";
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** A few bright stars joined by faint lines. */
+function paintConstellation(ctx, { x, y, points }) {
+  ctx.strokeStyle = "rgba(200,215,255,0.28)";
+  ctx.lineWidth = 0.8;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  points.forEach((p, i) => ctx[i ? "lineTo" : "moveTo"](x + p.dx, y + p.dy));
+  ctx.stroke();
+  for (const p of points) {
+    softEllipse(ctx, x + p.dx, y + p.dy, 9, 9, "#dfe8ff", 0.35);
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(x + p.dx, y + p.dy, 1.9, 0, TAU);
+    ctx.fill();
+  }
+}
+
+/** A tiny planet with a tilted ring. */
+function paintPlanet(ctx, { x, y, r, tilt, color }) {
+  const ring = (start, end) => {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, r * 2, r * 0.55, 0, start, end);
+    ctx.stroke();
+  };
+  softEllipse(ctx, x, y, r * 3, r * 3, color, 0.15);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+  ctx.strokeStyle = rgba(color, 0.85);
+  ctx.lineWidth = 1.6;
+  ring(Math.PI, TAU); // back half
+  const body = ctx.createLinearGradient(-r, -r, r, r);
+  body.addColorStop(0, color);
+  body.addColorStop(1, rgba(color, 0.55));
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, TAU);
+  ctx.fill();
+  ring(0, Math.PI); // front half
+  ctx.restore();
+}
+
+/** A soft, rounded heart centered on (x, y). */
+function traceHeart(ctx, x, y, r, turn) {
+  const steps = 120;
+  for (let i = 0; i < steps; i++) {
+    const t = (i / steps) * TAU;
+    const hx = 16 * Math.sin(t) ** 3;
+    const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+    const px = (hx * Math.cos(turn) - hy * Math.sin(turn)) * (r / 16);
+    const py = (hx * Math.sin(turn) + hy * Math.cos(turn)) * (r / 16) - r * 0.1;
+    ctx[i ? "lineTo" : "moveTo"](x + px, y + py);
+  }
+  ctx.closePath();
+}
+
+/** A four-pointed sparkle: concave sides, gently rounded tips. */
+function traceSparkle(ctx, x, y, r, turn) {
+  const point = (a, length) => [x + Math.cos(a + turn) * length, y + Math.sin(a + turn) * length];
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * TAU - Math.PI / 2;
+    const tip = point(a, r);
+    const control = point(a + Math.PI / 4, r * 0.24);
+    const next = point(a + Math.PI / 2, r);
+    if (k === 0) ctx.moveTo(...tip);
+    ctx.quadraticCurveTo(...control, ...next);
+  }
+  ctx.closePath();
+}
+
+/** Two dot eyes, rosy cheeks and a small smile, in a darker tone of the shape. */
+function paintFace(ctx, { x, y, r, color }) {
+  const ink = rgbString(mixRgb(hexToRgb(color), [70, 55, 80], 0.6));
+  ctx.fillStyle = ink;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(x + side * r * 0.3, y - r * 0.1, r * 0.075, r * 0.1, 0, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(255,140,160,0.35)";
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(x + side * r * 0.5, y + r * 0.12, r * 0.13, r * 0.08, 0, 0, TAU);
+    ctx.fill();
+  }
+  ctx.strokeStyle = ink;
+  ctx.lineWidth = Math.max(1.5, r * 0.07);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(x, y + r * 0.05, r * 0.2, 0.2 * Math.PI, 0.8 * Math.PI);
+  ctx.stroke();
+}
+
+/** A soft pastel butterfly, wings open. */
+function paintButterfly(ctx, { x, y, size, angle, colors: [wing, light] }) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size, size);
+  for (const side of [-1, 1]) {
+    ctx.fillStyle = wing;
+    ctx.beginPath();
+    ctx.ellipse(side * 7, -4, 7.5, 6, side * -0.5, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(side * 5.5, 5, 5, 4.2, side * 0.6, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = light;
+    ctx.beginPath();
+    ctx.ellipse(side * 8, -5, 3, 2.3, side * -0.5, 0, TAU);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(side * 6, 5.5, 1.6, 0, TAU);
+    ctx.fill();
+  }
+  ctx.strokeStyle = "#6b5560";
+  ctx.lineCap = "round";
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(0, -6);
+  ctx.lineTo(0, 7);
+  ctx.stroke();
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  ctx.moveTo(-0.5, -6);
+  ctx.quadraticCurveTo(-2, -11, -4, -12);
+  ctx.moveTo(0.5, -6);
+  ctx.quadraticCurveTo(2, -11, 4, -12);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A small round songbird (a white-eye) sitting on the branch at point p. */
+function paintPerchedBird(ctx, p, { size, facing }) {
+  ctx.save();
+  ctx.translate(p.x, p.y - 2);
+  ctx.scale(size * facing, size);
+  ctx.strokeStyle = "#5b4a44";
+  ctx.lineWidth = 1;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(-1.5, -3);
+  ctx.lineTo(-2, 0);
+  ctx.moveTo(1.5, -3);
+  ctx.lineTo(1.5, 0);
+  ctx.stroke();
+  ctx.fillStyle = "#7f9550"; // tail
+  ctx.beginPath();
+  ctx.moveTo(-6, -7);
+  ctx.lineTo(-14, -4);
+  ctx.lineTo(-13, -7.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#93a85e"; // body
+  ctx.beginPath();
+  ctx.ellipse(-1, -8, 7.5, 5.5, -0.15, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#e9e3b8"; // belly
+  ctx.beginPath();
+  ctx.ellipse(0.5, -5.5, 5, 2.8, -0.1, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#9db365"; // head
+  ctx.beginPath();
+  ctx.arc(5, -13, 4.2, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#7f9550"; // wing
+  ctx.beginPath();
+  ctx.ellipse(-3, -8.5, 4.5, 2.6, 0.25, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff"; // eye ring
+  ctx.beginPath();
+  ctx.arc(6.3, -13.6, 1.7, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#2f2a2a";
+  ctx.beginPath();
+  ctx.arc(6.5, -13.6, 0.9, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#4e463f"; // beak
+  ctx.beginPath();
+  ctx.moveTo(8.8, -13.5);
+  ctx.lineTo(11.2, -12.6);
+  ctx.lineTo(8.8, -11.9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+/** A tiny cabin silhouette in the ridge color, with a warm lit window and smoke. */
+function paintCabin(ctx, x, ground, size) {
+  const ridgeColor = ctx.fillStyle;
+  ctx.save();
+  ctx.translate(x, ground);
+  ctx.scale(size, size);
+  ctx.beginPath();
+  ctx.rect(-8, -9, 16, 10);
+  ctx.moveTo(-10.5, -8.5);
+  ctx.lineTo(0, -17);
+  ctx.lineTo(10.5, -8.5);
+  ctx.closePath();
+  ctx.rect(4, -18, 3, 6);
+  ctx.fill();
+  softEllipse(ctx, -2.5, -4.5, 9, 9, "#ffd48a", 0.35);
+  ctx.fillStyle = "#ffd998";
+  ctx.fillRect(-4.5, -6.5, 4, 3.5);
+  ctx.strokeStyle = "rgba(255,255,255,0.45)";
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(5.5, -20);
+  ctx.bezierCurveTo(3, -24, 9, -26, 6.5, -31);
+  ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = ridgeColor;
+}
+
+/** A paper-cut ladybug. */
+function paintLadybug(ctx, { x, y, size, angle }) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size, size);
+  ctx.fillStyle = "rgba(90,70,40,0.12)";
+  ctx.beginPath();
+  ctx.ellipse(1.2, 1.5, 6.5, 7.5, 0, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#3a3330"; // head
+  ctx.beginPath();
+  ctx.arc(0, -6.2, 3.4, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#d9493c"; // shell
+  ctx.beginPath();
+  ctx.ellipse(0, 0.8, 6.3, 7.2, 0, 0, TAU);
+  ctx.fill();
+  ctx.strokeStyle = "#3a3330";
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(0, -6.2);
+  ctx.lineTo(0, 8);
+  ctx.stroke();
+  ctx.fillStyle = "#3a3330";
+  for (const [dx, dy, r] of [[2.8, -2, 1.3], [-2.8, -2, 1.3], [3.3, 3, 1.2], [-3.3, 3, 1.2], [1.6, 6, 0.9], [-1.6, 6, 0.9]]) {
+    ctx.beginPath();
+    ctx.arc(dx, dy, r, 0, TAU);
+    ctx.fill();
+  }
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.beginPath();
+  ctx.ellipse(-2.6, -2.8, 1.4, 0.8, -0.6, 0, TAU);
+  ctx.fill();
+  ctx.restore();
+}
+
+/** A paper-cut acorn with its textured cap. */
+function paintAcorn(ctx, { x, y, size, angle }) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.scale(size, size);
+  ctx.fillStyle = "rgba(90,70,40,0.12)";
+  ctx.beginPath();
+  ctx.ellipse(1.5, 3.5, 6.5, 9, 0, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#c99a5b"; // nut
+  ctx.beginPath();
+  ctx.ellipse(0, 2.5, 6, 8, 0, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.22)";
+  ctx.beginPath();
+  ctx.ellipse(-2.4, 3, 1.6, 4, 0.1, 0, TAU);
+  ctx.fill();
+  ctx.fillStyle = "#8a6a46"; // cap
+  ctx.beginPath();
+  ctx.ellipse(0, -3.5, 7.5, 4.6, 0, Math.PI, TAU);
+  ctx.ellipse(0, -3.5, 7.5, 1.6, 0, 0, Math.PI);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.18)";
+  for (let k = -2; k <= 2; k++) {
+    ctx.beginPath();
+    ctx.arc(k * 2.6, -4.5 + Math.abs(k) * 0.4, 0.75, 0, TAU);
+    ctx.fill();
+  }
+  ctx.strokeStyle = "#7a5b3c"; // stem
+  ctx.lineWidth = 1.6;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(0, -7.6);
+  ctx.quadraticCurveTo(0.6, -10.5, 2.2, -11.2);
+  ctx.stroke();
+  ctx.restore();
+}
 
 /** A puffy rounded shape of radius r with `lobes` full bumps. Between bumps the
     outline dips inward by `depth` (a fraction of r); a higher `pinch` makes the
@@ -959,6 +1646,7 @@ function paintBranch(ctx, branch) {
     ctx.restore();
   }
   for (const f of branch.flowers) paintFlower(ctx, f.x, f.y, f.size, f.angle);
+  if (branch.bird) paintPerchedBird(ctx, branch.along(branch.bird.t), branch.bird);
   ctx.restore();
 }
 
