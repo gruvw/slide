@@ -27,6 +27,8 @@
   --color-surface-hover: rgb(27 39 66 / 0.06);
   --color-border: rgb(27 39 66 / 0.1);
   --color-accent: #1d3461;
+  --color-primary: #1d3461;
+  --color-on-primary: #ffffff;
   --color-love: #d8374f;
   --color-love-soft: rgb(216 55 79 / 0.08);
   --color-backdrop: rgb(14 22 40 / 0.35);
@@ -87,6 +89,8 @@
     --color-surface-hover: rgb(255 255 255 / 0.07);
     --color-border: rgb(255 255 255 / 0.1);
     --color-accent: #8e9cba;
+    --color-primary: #e6e9f2;
+    --color-on-primary: #141826;
     --color-love: #ff7b8b;
     --color-love-soft: rgb(255 123 139 / 0.1);
     --color-backdrop: rgb(0 0 0 / 0.5);
@@ -422,10 +426,12 @@ a {
   transition-delay: 0s;
 }
 
-/* Link button: e.g. the source code link */
-.link-button {
+/* Button: outlined pill, for links and buttons alike (e.g. the source code
+   link); --primary is filled, --love has a red outline and icon */
+.button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
@@ -434,24 +440,114 @@ a {
   color: var(--color-ink);
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
+  background: transparent;
   text-decoration: none;
+  cursor: pointer;
   transition: background var(--duration) var(--ease);
 }
 
-.link-button:hover {
+.button:hover {
   background: var(--color-surface-hover);
 }
 
-.link-button--love {
+.button--primary,
+.button--primary:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.button--primary:hover {
+  opacity: 0.88;
+}
+
+.button--love {
   border-color: var(--color-love);
 }
 
-.link-button--love .icon {
+.button--love .icon {
   color: var(--color-love);
 }
 
-.link-button--love:hover {
+.button--love:hover {
   background: var(--color-love-soft);
+}
+
+/* Install tip: a small card at the bottom of the app suggesting to install it */
+.install-tip {
+  position: absolute;
+  right: var(--space-3);
+  bottom: max(var(--space-4), env(safe-area-inset-bottom));
+  left: var(--space-3);
+  z-index: var(--z-topbar);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icon text"
+    "actions actions";
+  align-items: center;
+  gap: var(--space-3) var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-solid);
+  box-shadow: var(--shadow-lift);
+  animation: install-tip-in var(--duration) var(--ease);
+}
+
+.install-tip[hidden] {
+  display: none;
+}
+
+@keyframes install-tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+}
+
+.install-tip__icon {
+  grid-area: icon;
+  display: block;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.install-tip__text {
+  grid-area: text;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.install-tip__text strong {
+  color: var(--color-ink);
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+}
+
+.install-tip__text .icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+  color: var(--color-ink);
+}
+
+.install-tip__actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.install-tip__actions [hidden] {
+  display: none;
 }
 
 /* Background picker */

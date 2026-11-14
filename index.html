@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
-  <title>Slide: a calming scroll, open it instead of social media</title>
-  <meta name="description" content="Slide is a calming scroll through soothing backgrounds. Open it instead of social media: your thumb gets its scroll, your mind gets a break.">
+  <title>Slide: a calming scroll, open it instead of social or shopping apps</title>
+  <meta name="description" content="Slide is a calming scroll through soothing backgrounds. Open it instead of social or shopping apps: your thumb gets its scroll, your mind gets a break.">
   <link rel="canonical" href="https://slide.gruvw.com/">
   <meta name="robots" content="index, follow">
   <meta name="author" content="gruvw">
@@ -26,7 +26,7 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Slide">
   <meta property="og:title" content="Slide: a calming scroll">
-  <meta property="og:description" content="Open Slide instead of social media. Scroll through soothing backgrounds: no feed, no ads, nothing to catch up on.">
+  <meta property="og:description" content="Open Slide instead of social or shopping apps. Scroll through soothing backgrounds: no feed, no ads, nothing to catch up on.">
   <meta property="og:url" content="https://slide.gruvw.com/">
   <meta property="og:image" content="https://slide.gruvw.com/icons/og-image.png">
   <meta property="og:image:type" content="image/png">
@@ -36,7 +36,7 @@
   <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Slide: a calming scroll">
-  <meta name="twitter:description" content="Open Slide instead of social media. Scroll through soothing backgrounds: no feed, no ads, nothing to catch up on.">
+  <meta name="twitter:description" content="Open Slide instead of social or shopping apps. Scroll through soothing backgrounds: no feed, no ads, nothing to catch up on.">
   <meta name="twitter:image" content="https://slide.gruvw.com/icons/og-image.png">
 
   <script type="application/ld+json">
@@ -45,7 +45,7 @@
     "@type": "WebApplication",
     "name": "Slide",
     "url": "https://slide.gruvw.com/",
-    "description": "A calming scroll through soothing backgrounds, to open instead of social media.",
+    "description": "A calming scroll through soothing backgrounds, to open instead of social or shopping apps.",
     "applicationCategory": "LifestyleApplication",
     "operatingSystem": "Any",
     "browserRequirements": "Requires a modern web browser",
@@ -75,17 +75,17 @@
       </header>
       <div class="panel__content">
         <div class="panel__body">
-          <p>Feel the pull to open a social app? Open Slide instead.</p>
+          <p>Feel the pull to open a social or shopping app? Open Slide instead.</p>
           <p>Scroll as long as you like through slow, soothing backgrounds. There is no feed, no notifications and nothing to catch up on. Your thumb gets its scroll, your mind gets a break.</p>
           <p>Slide is free, open source and has no ads.</p>
           <p>Tip: add Slide to your home screen, right where your usual app used to be.</p>
         </div>
         <footer class="panel__footer">
-          <a class="link-button" href="https://github.com/gruvw/slide" target="_blank" rel="noopener">
+          <a class="button" href="https://github.com/gruvw/slide" target="_blank" rel="noopener">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>
             Source code on GitHub
           </a>
-          <a class="link-button link-button--love" href="https://ko-fi.com/gruvw" target="_blank" rel="noopener">
+          <a class="button button--love" href="https://ko-fi.com/gruvw" target="_blank" rel="noopener">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-8-4.6-8-10.2A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 8 2.4C20 15.4 12 20 12 20z"/></svg>
             Support Slide
           </a>
@@ -105,6 +105,16 @@
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
         </button>
       </nav>
+
+      <!-- Suggests installing the app, once it has been used a while (script.js: 6. Install suggestion) -->
+      <aside class="install-tip" id="install-tip" aria-label="Install Slide" hidden>
+        <img class="install-tip__icon" src="icons/icon-192.png" alt="" width="44" height="44">
+        <p class="install-tip__text" id="install-text"><strong>Add Slide to your home screen</strong><span>Right where your usual app used to be. Full screen, and it works offline.</span></p>
+        <div class="install-tip__actions">
+          <button class="button" type="button" id="install-later">Not now</button>
+          <button class="button button--primary" type="button" id="install-now">Install</button>
+        </div>
+      </aside>
     </main>
 
     <!-- Backgrounds: centered window on mobile, right side bar on desktop -->

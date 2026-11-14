@@ -2,18 +2,45 @@
   "id": "/",
   "name": "Slide",
   "short_name": "Slide",
-  "description": "A calming scroll through soothing backgrounds, to open instead of social media.",
+  "description": "A calming scroll through soothing backgrounds, to open instead of social or shopping apps.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#172a4d",
   "theme_color": "#172a4d",
   "lang": "en",
-  "categories": ["lifestyle", "health"],
+  "categories": [
+    "lifestyle",
+    "health"
+  ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://slide.gruvw.com/manifest.json",
+      "id": "https://slide.gruvw.com/"
+    }
+  ],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }
