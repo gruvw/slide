@@ -1937,7 +1937,7 @@ document.addEventListener("keydown", (event) => {
    can be done by hand: not in another app's built-in browser), only if not
    installed already, and only once Slide has been in use a while on this
    visit (15 seconds on screen and at least 4 touches, clicks, wheel turns or keys),
-   at a quiet moment (3 seconds without any, the background still), never
+   at a quiet moment (2 seconds without any, the background still), never
    right away. It stays until answered. "Not now": asked once more on a visit
    a week or more later; "Not now" again, or the app installed: never again.
    "Install": the browser's own install where it offers one, else the steps
@@ -1948,7 +1948,7 @@ document.addEventListener("keydown", (event) => {
 const INSTALL_KEY = "slide:install-tip";
 const INSTALL_AFTER = 15;                   // seconds on screen this visit
 const INSTALL_PRESSES = 4;                  // ... and touches, clicks, wheel turns or keys
-const INSTALL_PAUSE = 3000;                 // ms without any, the background still, just before
+const INSTALL_PAUSE = 2000;                 // ms without any, the background still, just before
 const INSTALL_AGAIN = 7 * 24 * 3600 * 1000; // ms before asking the second time
 const SHARE_ICON = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
 
@@ -2047,7 +2047,7 @@ function setupInstallTip() {
       }
       return;
     }
-    text.innerHTML = `<strong>Install Slide</strong><span>${steps}</span>`;
+    text.innerHTML = `<strong>How to install</strong><span>${steps}</span>`;
     later.hidden = true;
     now.textContent = "Done";
     now.classList.remove("button--primary");
