@@ -5,7 +5,8 @@
    3. Endless scroll   draws the background in canvas "chunks" as you scroll
    4. Background picker
    5. Panels
-   6. Offline (PWA)
+   6. Install suggestion
+   7. Offline (PWA)
 
    How the backgrounds work
    The scroll is cut into chunks of CHUNK_HEIGHT pixels, each one a <canvas>.
@@ -1931,7 +1932,174 @@ document.addEventListener("keydown", (event) => {
 });
 
 
-/* 6. Offline (PWA)
+/* 6. Install suggestion
+   Suggests installing Slide, gently: only in a browser that can (or where it
+   can be done by hand: not in another app's built-in browser), only if not
+   installed already, and only once Slide has been in use a while on this
+   visit (15 seconds on screen and at least 4 touches, clicks, wheel turns or keys),
+   at a quiet moment (3 seconds without any, the background still), never
+   right away. It stays until answered. "Not now": asked once more on a visit
+   a week or more later; "Not now" again, or the app installed: never again.
+   "Install": the browser's own install where it offers one, else the steps
+   for this browser. To try it: add ?install-tip to the address, it then
+   shows at once and keeps no answer.
+   ========================================================================== */
+
+const INSTALL_KEY = "slide:install-tip";
+const INSTALL_AFTER = 15;                   // seconds on screen this visit
+const INSTALL_PRESSES = 4;                  // ... and touches, clicks, wheel turns or keys
+const INSTALL_PAUSE = 3000;                 // ms without any, the background still, just before
+const INSTALL_AGAIN = 7 * 24 * 3600 * 1000; // ms before asking the second time
+const SHARE_ICON = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>';
+
+function setupInstallTip() {
+  const tip = document.getElementById("install-tip");
+  const text = document.getElementById("install-text");
+  const later = document.getElementById("install-later");
+  const now = document.getElementById("install-now");
+
+  const trying = new URLSearchParams(location.search).has("install-tip");
+  const read = () => {
+    try {
+      return JSON.parse(localStorage.getItem(INSTALL_KEY)) || {};
+    } catch {
+      return {};
+    }
+  };
+  const write = (value) => {
+    if (trying) return;
+    try {
+      localStorage.setItem(INSTALL_KEY, JSON.stringify(value));
+    } catch {
+      // Not kept: asked again on the next visit.
+    }
+  };
+
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (standalone && !trying) {
+    write({ ...read(), installed: true });
+    return;
+  }
+
+  // The browser's own install (Chrome, Edge, Samsung Internet...): its banner
+  // is held back, this card offers it later instead.
+  let offer = null;
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    offer = event;
+  });
+  window.addEventListener("appinstalled", () => {
+    write({ ...read(), installed: true });
+    tip.hidden = true;
+  });
+
+  // Where installing is done by hand: the steps (null: not possible here
+  // without the browser's own). Never in another app's built-in browser
+  // (Instagram, Facebook...), which has no "Add to Home Screen".
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const inApp = /FBAN|FBAV|Instagram|Line\/|MicroMessenger|Snapchat|TikTok|musical_ly|Bytedance|Pinterest|LinkedInApp|GSA\/|; wv\)/.test(ua)
+    || (ios && !/Safari\//.test(ua));
+  const safariVersion = Number((ua.match(/Version\/(\d+)/) || [])[1]);
+  const macSafari = !ios && /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox|OPR/.test(ua)
+    && safariVersion >= 17; // "Add to Dock": Safari 17 and later
+  const steps = inApp ? null
+    : ios ? `Tap ${SHARE_ICON} Share, then “More” (if shown), then “Add to Home Screen”.`
+    : macSafari ? "In the menu bar: File, then “Add to Dock”."
+    : /Android/.test(ua) && /Firefox/.test(ua) ? "Open the menu (⋮), then “Install”."
+    : trying ? "Open the browser’s menu, then “Install” or “Add to Home Screen”."
+    : null;
+
+  const due = () => {
+    const value = read();
+    if (value.installed || (value.declined || 0) >= 2) return false;
+    return !value.declined || Date.now() - (value.at || 0) >= INSTALL_AGAIN;
+  };
+  if (!due() && !trying) return;
+
+  // Installed already? Chrome and Edge can tell (manifest.json:
+  // related_applications); other browsers can't know.
+  let installed = false;
+  navigator.getInstalledRelatedApps?.().then((apps) => {
+    if (apps.length) {
+      installed = true;
+      write({ ...read(), installed: true });
+    }
+  }).catch(() => {});
+
+  const answer = () => { // "Not now", or the steps read
+    const value = read();
+    write({ ...value, declined: (value.declined || 0) + 1, at: Date.now() });
+    tip.hidden = true;
+  };
+  later.addEventListener("click", answer);
+  now.addEventListener("click", async () => {
+    if (offer) {
+      const asked = offer;
+      offer = null; // the browser's install asks only once
+      asked.prompt();
+      const { outcome } = await asked.userChoice.catch(() => ({ outcome: "dismissed" }));
+      if (outcome === "accepted") {
+        write({ ...read(), installed: true });
+        tip.hidden = true;
+      } else {
+        answer();
+      }
+      return;
+    }
+    text.innerHTML = `<strong>Install Slide</strong><span>${steps}</span>`;
+    later.hidden = true;
+    now.textContent = "Done";
+    now.classList.remove("button--primary");
+    now.onclick = answer;
+  }, { once: true });
+
+  if (trying) {
+    tip.hidden = false;
+    return;
+  }
+
+  // In use a while: time only counts while the page shows. Scrolling keeps
+  // the moment busy too, so the card never appears mid-scroll.
+  let seconds = 0;
+  let presses = 0;
+  let lastActive = 0;
+  const press = () => {
+    presses++;
+    lastActive = performance.now();
+  };
+  const wheel = () => {
+    if (performance.now() - lastActive > 300) presses++; // one per wheel gesture
+    lastActive = performance.now();
+  };
+  const scrolled = () => {
+    lastActive = performance.now();
+  };
+  document.addEventListener("pointerdown", press, true);
+  document.addEventListener("keydown", press, true);
+  document.addEventListener("wheel", wheel, { capture: true, passive: true });
+  scroller.addEventListener("scroll", scrolled, { passive: true });
+
+  const tick = setInterval(() => {
+    if (document.visibilityState !== "visible") return;
+    seconds++;
+    if (installed) {
+      clearInterval(tick);
+      return;
+    }
+    if (seconds < INSTALL_AFTER || presses < INSTALL_PRESSES || performance.now() - lastActive < INSTALL_PAUSE) return;
+    if (openToggle || !(offer || steps)) return; // a window open: once it closes; no way to install yet: maybe later
+    clearInterval(tick);
+    document.removeEventListener("pointerdown", press, true);
+    document.removeEventListener("keydown", press, true);
+    document.removeEventListener("wheel", wheel, { capture: true });
+    scroller.removeEventListener("scroll", scrolled);
+    tip.hidden = false;
+  }, 1000);
+}
+
+
+/* 7. Offline (PWA)
    ========================================================================== */
 
 if ("serviceWorker" in navigator) {
@@ -1947,4 +2115,5 @@ if ("serviceWorker" in navigator) {
 scroller.scrollTop = Math.round(maxScroll() / 2 / CHUNK_HEIGHT) * CHUNK_HEIGHT;
 setBackground(loadBackground());
 paintPreviews();
+setupInstallTip();
 scroller.focus({ preventScroll: true });

@@ -1,9 +1,9 @@
 # Slide
 
-**A calming scroll, open it instead of social media.**
+**A calming scroll, open it instead of social or shopping apps.**
 
 Slide is a tiny "digital pacifier" for people who reach for their phone out of habit.
-When you feel the pull to open a social app, open Slide instead: a calming, quiet
+When you feel the pull to open a social or shopping app, open Slide instead: a calming, quiet
 scroll through soothing backgrounds. No feed, no ads, no notifications, nothing to
 catch up on. Your thumb gets its scroll, your mind gets a break.
 
